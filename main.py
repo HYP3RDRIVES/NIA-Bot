@@ -8,6 +8,8 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 import sys
+from addict import Dict
+import json
 # import sqlalchemy
 
 load_dotenv()
@@ -16,6 +18,9 @@ bot = commands.Bot(command_prefix='$')
 apiURL = "https://niabot.zt-e.tech"
 apiKey = os.getenv("API_KEY")
 globalFilterOverride = False
+f = open("filterwords.json")
+chatFilter = Dict(json.load(f))
+
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Game(name='Pinewood Computer Core'))
@@ -43,8 +48,8 @@ async def on_message(message):
                 embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
 
                 await channel.send(embed=embed)
-        bannedWords = ['<INSERT BANNED WORDS IN DICTIONARY FORMAT>']
-        for key in bannedWords:
+
+        for key in chatFilter['bannedWords']:
             if key in message.content.lower():
 
                 await message.delete()
