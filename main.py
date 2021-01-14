@@ -43,7 +43,7 @@ async def on_message(message):
                 embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
 
                 await channel.send(embed=embed)
-        bannedWords = ['sex', 'porn', 'nigger', 'vagina', 'penis', 'suckadick', 'p0rn', 'erection', 'anal', 'analsex', 'oralsex', 'blowjob', 'blowie', 'areola', 'asshore', 'buttfuck', 'anal-sex', 'clit', 'clitoris', 'condom', 'cunt', 'fisting', 'iblowu', 'jizz', 'livesex', 'masturbate', 'mastrabator', 'masturbating', 'meatbeater', 'faggot', 'nigga', 'wank','wanker', 'prostitute', 'prostitution', 'discord.gg/']
+        bannedWords = ['<INSERT BANNED WORDS IN DICTIONARY FORMAT>']
         for key in bannedWords:
             if key in message.content.lower():
 
