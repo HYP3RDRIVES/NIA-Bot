@@ -10,6 +10,7 @@ from datetime import datetime
 import sys
 from addict import Dict
 import json
+from profanity import profanity
 # import sqlalchemy
 
 load_dotenv()
@@ -43,7 +44,7 @@ async def on_message(message):
                     description="Banned word triggered by `On-Watch link remover`",
                     colour=discord.Colour.from_rgb(255, 0, 242)
                 )
-                embed.add_field(name="Banned Word", value=key)
+                embed.add_field(name="Trigger", value="Link Posted")
                 embed.add_field(name="Full Message", value=message.content, inline=False)
                 embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
 
@@ -241,26 +242,22 @@ async def on_message(message):
                 return
             result = result.decode("utf-8")
             string_length = len(result)
-            if string_length > 2048:                
-                chunklength = 2048
+            if string_length > 1999:                
+                chunklength = 1999
                 chunks = [result[i:i+chunklength ] for i in range(0, len(result), chunklength )]
                 starter = 1
                 for chunk in chunks:
-                    embedVar = discord.Embed(title="Linux Command Executor",
-                            description=chunk,
-                            color=0x9CAFBE,
-                            inline=True)
                     if starter == 1:
-                        await target.edit(embed=embedVar,content="")
+                        await target.edit(content="```"+chunk+"```")
                         starter = 2
                     else:
-                        await message.channel.send(embed=embedVar)
+                        await message.channel.send("```"+chunk+"```")
             else:
                 embedVar = discord.Embed(title="Linux Command Executor",
                             description=result,
                             color=0x9CAFBE,
                             inline=True)
-                await target.edit(embed=embedVar,content="")
+                await target.edit(content="```"+result+"```")
         else:
             embed = discord.Embed(
                 title="Invalid Permissions!",
@@ -300,9 +297,7 @@ async def on_message(message):
 
     if message.content.startswith('$kos'):
         #target = client.get_channel(658251987959152641)
-        perms = message.author.guild_permissions
-        print(perms.administrator)
-        if perms.administrator == True:
+        if message.author.guild_permissions.administrator == True:
             text = message.content
             text = text.lstrip("$kos")
             #await message.channel.send(text)
@@ -354,29 +349,30 @@ async def on_message(message):
             await message.channel.send("An Unknown Error has Occured. Check bot and API logs.")
     
     if message.content.startswith('$viewpoints'):
-        #target = client.get_channel(658251987959152641)
-        text = message.content
-        text = text.replace("$viewpoints ", "", 1)
-        print(apiKey)
-        data =  {'API_KEY':apiKey,
-        'USERNAME': text,
-        }
-        #headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        r = requests.post(apiURL+"/user/viewpoints", json=data)
-        print(r.text)
-        embed = discord.Embed(
+        if message.author.guild_permissions.administrator == True:
+            #target = client.get_channel(658251987959152641)
+            text = message.content
+            text = text.replace("$viewpoints ", "", 1)
+            print(apiKey)
+            data =  {'API_KEY':apiKey,
+            'USERNAME': text,
+            }
+            #headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            r = requests.post(apiURL+"/user/viewpoints", json=data)
+            print(r.text)
+            embed = discord.Embed(
                 title="**Points for"+' '+text+"**",
                 colour=discord.Colour.orange(),
                 description=r.text,
                 )
-        status = r.status_code
-        print(status)
-        if status == 200:
-            await message.channel.send(embed=embed)
-        elif status == 569:
-            await message.channel.send("User Not Found!")
-        else:
-            await message.channel.send("An Unknown Error has Occured. Check bot and API logs.")
+            status = r.status_code
+            print(status)
+            if status == 200:
+                await message.channel.send(embed=embed)
+            elif status == 569:
+                await message.channel.send("User Not Found!")
+            else:
+                await message.channel.send("An Unknown Error has Occured. Check bot and API logs.")
     
     if message.content.startswith('$addpoints'):
         #target = client.get_channel(658251987959152641)
@@ -384,7 +380,8 @@ async def on_message(message):
         text = text.replace("$addpoints ", "", 1)
         points = text[text.find(';'):]
         points = points.lstrip(';')
-        username = text.rstrip(';'+points)
+        if text.endswith(points):    
+            username = text.rstrip(points).rstrip(";")
         print(apiKey)
         data =  {'API_KEY':apiKey,
         'USERNAME': username,
@@ -422,7 +419,9 @@ async def on_message(message):
             else:
                 points = text[text.find(';'):]
                 points = points.lstrip(';')
-                username = text.rstrip(';'+points)
+                if text.endswith(points):    
+                    username = text.rstrip(points).rstrip(";")
+                #username = text.rstrip(';'+points)
                 data =  {'API_KEY':apiKey,
                 'USERNAME': username,
                 'POINTS': points
