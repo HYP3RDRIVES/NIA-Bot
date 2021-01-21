@@ -3,6 +3,9 @@ from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 from flask_sqlalchemy import SQLAlchemy 
 import os
+from addict import Dict
+import json
+from datetime import datetime
 app = Flask(__name__)
 
 #app.config['SECRET_KEY'] = 'QuyylPshMfZdediqCAboDfCyPr1BfZ1z'
@@ -20,6 +23,13 @@ class Userpoints(db.Model):
 class IgnoreUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.String(50))
+
+class Schedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50))
+    host = db.Column(db.String(50))
+    event_type = db.Column(db.String(50))
+    date = db.Column(db.DateTime)
 
 db.create_all()
 db.session.commit()
@@ -62,14 +72,26 @@ def apiReduct():
 @app.route("/user/viewpoints", methods=['POST'])
 def apiView():
     req_data = request.get_json()
-    username = req_data['USERNAME']
-    print(username)
     api_key = req_data['API_KEY']
     if api_key == apiKey:
-        user = Userpoints.query.filter_by(username=username).first()
-        if user is None:
-            return '569', 569
-        return str(user.points)
+        if req_data['req_type']  == "Singular":
+            username = req_data['USERNAME']
+            print(username)
+            user = Userpoints.query.filter_by(username=username).first()
+            if user is None:
+                return '569', 569
+            return str(user.points)
+        elif req_data['req_type'] == "Batch":
+            users = Userpoints.query.order_by(Userpoints.id.desc()).all()
+            targdict = Dict()
+            for x in users:
+                targdict['__'].setdefault(x.username,x.points)
+            resp = app.response_class(
+                response=json.dumps(targdict),
+                status = 200,
+                mimetype = "application/json"
+            )
+            return resp
     else:
         return '401', 401
     
@@ -224,17 +246,9 @@ def apiSchedule():
             mimetype='application/json'
             )
             return response
-
-
     else:
         return '401', 401
 
 @app.errorhandler(404)
 def notfound(error):
     return redirMain()
-
-    
-
-    
-
-
