@@ -118,7 +118,11 @@ async def on_message(message):
                 title="NIA Bot#1656",
                 description="""A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-                Currently running **NIABot v1.0.1**"""
+Currently running **NIABot v1.0.1**
+
+Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)                
+                
+                """
                 
             )
             embed.set_footer(text="Message will delete after 30 seconds")
@@ -812,6 +816,7 @@ $schedule events - Displays next 5 events
 
                 You can now use `$help` for help information!!!
 
+                Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)
                 """
             )
             embed.set_footer(text="This is an automated message that displays on Bot Updates")
