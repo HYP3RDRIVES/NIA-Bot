@@ -39,7 +39,6 @@ def redirMain():
     return "<script>location.replace('https://zt-e.tech/')</script>"
 
 
-
 @app.route("/user/addpoints", methods=['POST'])
 def apiLog():
     req_data = request.get_json()
@@ -57,11 +56,13 @@ def apiLog():
             target_points = int(target_points)
             print(original_points+target_points)
             user.points = original_points+target_points
+            targ = original_points+target_points
         else:
             data = Userpoints(username=username, points=target_points)
             db.session.add(data)
+            targ = target_points
         db.session.commit()
-        return '200',200
+        return str(targ),200
     else:
         return '401', 401
 

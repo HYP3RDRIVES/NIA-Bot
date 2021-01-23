@@ -16,7 +16,9 @@ import asyncio
 
 load_dotenv()
 #client = discord.AutoShardedClient(shard_count=10)
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='$')
 apiURL = "https://niabot.zt-e.tech"
 apiKey = os.getenv("API_KEY")
@@ -82,7 +84,7 @@ async def on_message(message):
                 return
                 
     if not message.content.startswith('$'):
-        sucidalPhrashes = ['i want to die', 'kill myself', 'i want to kms', 'i want to be dead', 'i want dead', 'kill me', 'i wish i was dead', 'i wish i were dead']
+        sucidalPhrashes = ['i want to die', 'i should kill myself', 'i want to kms', 'i want to be dead', 'i want dead', 'i wish i was dead', 'i wish i were dead', 'i want to kill myself', 'end me']
         for key in sucidalPhrashes:
             if key in message.content.lower():
                 embed = discord.Embed(
@@ -118,7 +120,7 @@ async def on_message(message):
                 title="NIA Bot#1656",
                 description="""A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-Currently running **NIABot v1.0.1**
+Currently running **NIABot v1.0.3**
 
 Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)                
                 
@@ -363,6 +365,13 @@ HOST TIME OUT
             while iterateor < 11:
                 await message.channel.send(text)
                 iterateor = iterateor+1
+    
+    if message.content.startswith('$revert-chatbot'):
+        if message.author.id == 193112730943750144:
+            #target = client.get_channel(658251987959152641)
+            text = message.content
+            text = text.replace("$revert-chatbot ", "", 1)
+            await message.channel.send("Reverting chatbot to state on: "+text)
     if message.content.startswith('$chatbotplugin'):
         if message.author.id == 193112730943750144:
             #target = client.get_channel(658251987959152641)
@@ -548,6 +557,16 @@ HOST TIME OUT
         #        )
         if r.status_code == 200:
             await message.channel.send("points are set")
+            if int(points) < 0:
+                intstat = "Deducted"
+            elif int(points) > 0:
+                intstat = "Added"
+            if int(points) == 0:
+                intstat = "Unchanged"
+            dbupd = client.get_channel(802015191948722216)
+            embed = discord.Embed(title="NIA Database Update", description="<@"+str(message.author.id)+"> updated points for"+username)
+            embed.add_field(name="Point Modification",value=intstat+" "+str(points)+" points")
+            await dbupd.send(embed=embed)
         else:
             print(r.text)
             await message.channel.send("there was an error processing your request")
@@ -558,7 +577,7 @@ HOST TIME OUT
             #target = client.get_channel(658251987959152641)
             text = message.content
             text = text.replace("$setpoints ", "", 1)
-            if text == '':
+            if text.startswith("$setpoints"):
                 embed = discord.Embed(
                 title="**Usage Instructions**",
                 colour=discord.Colour.red(),
@@ -588,6 +607,10 @@ HOST TIME OUT
                 #        )
                 if r.status_code == 200:
                     await message.channel.send("points are set")
+                    dbupd = client.get_channel(802015191948722216)
+                    embed = discord.Embed(title="NIA Database Update", description="<@"+str(message.author.id)+"> updated points for"+username)
+                    embed.add_field(name="Point Modification",value="Set points to "+str(points))
+                    await dbupd.send(embed=embed)
                 else:
                     print(r.text)
                     await message.channel.send("there was an error processing your request")
@@ -616,9 +639,9 @@ HOST TIME OUT
                     embed = discord.Embed(
                     colour=discord.Colour.orange()
                     )
-                    embed.add_field(name="\u200b", value=line1, inline=False)
-                    embed.add_field(name="\u200b", value=line2, inline=False)
-                    await message.channel.send(embed=embed)        
+                embed.add_field(name="\u200b", value=line1, inline=False)
+                embed.add_field(name="\u200b", value=line2, inline=False)
+                await message.channel.send(embed=embed)        
   
 
 
@@ -683,45 +706,45 @@ $schedule events - Displays next 5 events
             else:
                 userAmount = text[text.find(';'):]
                 userAmount = userAmount.lstrip(';')
-                data =  {'API_KEY':apiKey,
-                'req_type':"Counter"
-                }
-                r = requests.post(apiURL+"/schedule", json=data)
-                amount = int(r.text)
-                userAmount = int(userAmount)
-                if amount < userAmount:
-                    endAmount = amount
-                else:
-                    endAmount = userAmount
-                iterate = 1
-                if endAmount == 0:
-                    await message.channel.send("No Upcoming Events!")
-                else:
-                    await message.channel.send("Now displaying"+' **'+str(endAmount)+'** '+ "events!")
-                    while iterate <= endAmount:
-                        data =  {'API_KEY':apiKey,
-                        'req_type':"ViewNextNum",
-                        'EVENT_ID':iterate
-                        }
-                        r = requests.post(apiURL+"/schedule", json=data)
-                        iterate = iterate + 1
-                        if r.status_code == 569:
-                            if iterate > endAmount:
-                                await message.channel.send("No Events Found!")
-                        elif r.status_code == 200:
-                            json_data = r.json()
-                            embed = discord.Embed(
-                            title="NIA Event",
-                            description=json_data['EVENT_TYPE'],
-                            colour=discord.Colour.from_rgb(104,204,237)
-                            )
-                            embed.add_field(name="Event Host", value=json_data['EVENT_HOST_NAME'])
-                            embed.add_field(name="Event Host", value="<@"+str(json_data['EVENT_HOST_ID'])+">")
-                            embed.add_field(name="Event Date", value=json_data['EVENT_DATE'])
-                            embed.add_field(name="Event ID", value=json_data['EVENT_ID'])
-                            await message.channel.send(embed=embed)
-                        else:
-                            await message.channel.send("An Unkown Error has Occured")
+            data =  {'API_KEY':apiKey,
+            'req_type':"Counter"
+            }
+            r = requests.post(apiURL+"/schedule", json=data)
+            amount = int(r.text)
+            userAmount = int(userAmount)
+            if amount < userAmount:
+                endAmount = amount
+            else:
+                endAmount = userAmount
+            iterate = 1
+            if endAmount == 0:
+                await message.channel.send("No Upcoming Events!")
+            else:
+                await message.channel.send("Now displaying"+' **'+str(endAmount)+'** '+ "events!")
+                while iterate <= endAmount:
+                    data =  {'API_KEY':apiKey,
+                    'req_type':"ViewNextNum",
+                    'EVENT_ID':iterate
+                    }
+                    r = requests.post(apiURL+"/schedule", json=data)
+                    iterate = iterate + 1
+                    if r.status_code == 569:
+                        if iterate > endAmount:
+                            await message.channel.send("No Events Found!")
+                    elif r.status_code == 200:
+                        json_data = r.json()
+                        embed = discord.Embed(
+                        title="NIA Event",
+                        description=json_data['EVENT_TYPE'],
+                        colour=discord.Colour.from_rgb(104,204,237)
+                        )
+                        embed.add_field(name="Event Host", value=json_data['EVENT_HOST_NAME'])
+                        embed.add_field(name="Event Host", value="<@"+str(json_data['EVENT_HOST_ID'])+">")
+                        embed.add_field(name="Event Date", value=json_data['EVENT_DATE'])
+                        embed.add_field(name="Event ID", value=json_data['EVENT_ID'])
+                        await message.channel.send(embed=embed)
+                    else:
+                        await message.channel.send("An Unkown Error has Occured")
                 
         if text.startswith("new"):
             if message.author.guild_permissions.administrator == True:
@@ -800,23 +823,24 @@ $schedule events - Displays next 5 events
             await message.delete()
             embed = discord.Embed(
                 title="NIA Bot#1656",
-                description="""A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
+                description="""
+A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-                Currently running **NIA-Bot v1.0.3**
+    Currently running **NIA-Bot v1.0.3**
                 
-                **A new update has been issued!**
+    **A new update has been issued!**
 
-                *What's New:*
-                - Point Logging
-                - Scheduling
-                - Light chat filter
-                - Mute and Tempmute commands
-                - Purge command
-                - Help Command
+    *What's New:*
+        - Point Logging
+        - Scheduling
+        - Light chat filter
+        - Mute and Tempmute commands
+        - Purge command
+        - Help Command
 
-                You can now use `$help` for help information!!!
+    You can now use `$help` for help information!!!
 
-                Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)
+Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)
                 """
             )
             embed.set_footer(text="This is an automated message that displays on Bot Updates")
@@ -876,6 +900,11 @@ $schedule remove;<eventid> - Removes the specified event - use `$schedule next` 
 $viewpoints <username> - Username must be the ***DISCORD NICKNAME*** - Not Roblox username
 $setpoints <username>;<number> - Username must be the ***DISCORD NICKNAME*** - Not Roblox username
 $addpoints <username>;<number> - Username must be the ***DISCORD NICKNAME*** - Not Roblox username
+
+$mute <User ***ID***> - User IDs not Usernames or mentions.
+$tempmute <User ***ID***> <Minutes> - User IDs not Usernames or mentions.
+$purge <# of messages> - Purges messages in the current channel.
+$globalfilterstateget - Returns the state of the GlobalFilter *Override*
                 """,
                 colour=discord.Colour.from_rgb(104, 204, 237)
 
@@ -908,9 +937,126 @@ $schedule events - Displays next 5 events
             await message.channel.send(embed=embed)
 
 
-    
+    if message.content.startswith('$batchlog'):
+        if message.author.guild_permissions.administrator == True:
+            text = message.content
+            text = text.replace("$batchlog ", "", 1)
+            if text.startswith('$batchlog'):
+                text = text.replace("$batchlog", "", 1)
+            if text.startswith("$batchlog"):
+                await message.channel.send("an error has occured")
+                return
+            text = text.split()
+            stagingList = []
+            for x in text:
+                if ';' in x:
+                    stagingList.append(x)
+                else:
+                    await message.channel.send("an error has occured, please check your formattings")
+                    return
+            #await message.channel.send(stagingList)
+            #print(stagingList)
+            embed = discord.Embed(title="NIA Point Log", description="Batch Logging (Adding these points) \n Please say 'Approve' or 'Reject'")
+            for x in stagingList:
+                operate = str(x)
+                points = operate[operate.find(";"):]
+                points = points.lstrip(";")
+                if operate.endswith(points):    
+                    username = operate.rstrip(points).rstrip(";")
+                    memberList = message.guild.members
+                    #print(memberList)
+                    userid = None
+                    for member in memberList:
+                        if member.nick == username:
+                            userid = member.id
+                    if userid is None:
+                        await message.channel.send("The user: "+username+" was not found in this server. Please try running $batchlog again with the correct spellings.")
+                        return
+                    embed.add_field(name=username,value="Points for <@"+str(userid)+"> will be modified by " +str(points))
+            try:
+                await message.channel.send(embed=embed)
+                msg = await client.wait_for("message",timeout=30) # 30 seconds to reply
+            except asyncio.TimeoutError:
+                await message.channel.send("Sorry, you didn't reply in time!")
+                return
+            if 'approve' in msg.content.lower():
+                for x in stagingList:
+                    operate = str(x)
+                    points = operate[operate.find(";"):]
+                    points = points.lstrip(";")
+                    if operate.endswith(points):    
+                        username = operate.rstrip(points).rstrip(";")
+                        data =  {'API_KEY':apiKey,
+                        'USERNAME': username,
+                        'POINTS': points
+                        }
+                        r = requests.post(apiURL+"/user/addpoints", json=data)
+                        status = str(r.status_code)
+                        if r.status_code == 200:
+                            await message.channel.send("points are logged for: "+username)
+                            dbupd = client.get_channel(802015191948722216)
+                            embed = discord.Embed(title="NIA Database Update", description="<@"+str(message.author.id)+"> updated points for: "+username)
+                            embed.add_field(name="Point Modification",value="Modified points to "+str(r.text))
+                            embed.add_field(name="Point Modification",value="Modified points by "+str(points))
+                            await dbupd.send(embed=embed)
+                        else:
+                            print(r.text)
+                            await message.channel.send("there was an error processing points for:"+username)
+                            await message.channel.send(f"status"+ ' ' + status)
+                clicker = await message.channel.send("Send DB Update message? [Y/n]")
+                try:
+                    msg = await client.wait_for("message", timeout=30)
+                except asyncio.TimeoutError:
+                    await message.channel.send("No Database update notification sent. - User timeout",delete_after=5)
+                    return
+                if "n" in message.content.lower():
+                    await clicker.delete()
+                    await message.channel.send("No Database update notification sent.",delete_after=5)
+                    return
+                elif "y" in msg.content.lower():
+                    await clicker.delete()
+                    msg.delete()
+                    clicker2 = await message.channel.send("Please input Database Update Notification Message")
+                    try:
+                        msg = await client.wait_for("message",timeout=30)
+                    except asyncio.TimeoutError:
+                        await message.channel.send("No Database update sent notification. - User timeout",delete_after=5)
+                        return
+                    targMsg = msg.content
+                    targChannel = client.get_channel(753076693379317983)
+                    embed = discord.Embed(title="NIA Database Update Notification",description=str(targMsg))
+                    embed.set_author(name="NIA Bot#1656",icon_url="https://cdn.discordapp.com/avatars/752993473350860920/4ecaf6fa0d715727e5e65deff5748759.png")
+                    embed.set_footer(text=msg.author.nick,icon_url=msg.author.avatar_url)
+                    await targChannel.send(embed=embed)
+                    await msg.delete()
+                    await clicker2.delete()
+                    return
+                        
+
+                
+            elif 'reject' in msg.content.lower():
+                await message.channel.send("Point log Rejected.")
+            else:
+                embed = discord.Embed(title="Invalid Command Flow!",description="Please say 'Approve' or 'Reject' (not case sensitive), Please start log process over.",colour=discord.Colour.red)
+                errormsg = await message.channel.send(embed=embed)
+                time.asyncio.sleep(60)
+
+                return
+
+    #if message.content.startswith('$testcmd'):
+     
+        
+
+                
+                
 
 
+    if message.content.startswith('$DEMOTE'):
+        text = message.content
+        text = text.replace("$DEMOTE ", "", 1)
+        embed = discord.Embed(title="NIA Demotion",description="Demotion set for: <@"+str(text)+">!")
+        embed.set_footer(name="Message will auto delete in 30 seconds")
+        await message.channel.send(embed=embed,delete_after=30)
 
 
 
