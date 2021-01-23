@@ -25,7 +25,6 @@ apiKey = os.getenv("API_KEY")
 globalFilterOverride = False
 f = open("filterwords.json")
 chatFilter = Dict(json.load(f))
-
 @client.event
 async def on_ready():
    # await client.change_presence(activity=discord.Game(name='Pinewood Computer Core'))
@@ -36,6 +35,7 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+
     global globalFilterOverride
     if message.author.guild_permissions.manage_messages == False and globalFilterOverride == False:
         role = discord.utils.get(message.guild.roles, name = "On Watch")
@@ -98,7 +98,7 @@ async def on_message(message):
                 embed.add_field(name="Other Countries:", value="You can view the hotlines for your country here: https://en.wikipedia.org/wiki/List_of_suicide_crisis_lines")
                 await message.channel.send(embed=embed)
     
-
+    
     if message.content.startswith('$'):
         data =  {'API_KEY':apiKey,
         'USERID': str(message.author.id),
@@ -256,19 +256,6 @@ $tempmute <userID> <Minutes>
             )
             await message.channel.send(embed=embed)
     
-    if message.content.startswith('$init'):
-        if message.author.id == 193112730943750144:
-            await message.channel.send("Initialising Global Filter")
-            await message.channel.send("Initialising Chatbot")
-            await message.channel.send("Initialising Dating.py")
-            await message.channel.send("""
-            ```
-Connection to Match.com Failed!
-HTTP 1.1 GET /
-HTTPS://MATCH.COM/
-HOST TIME OUT
-```            
-            """)
     if message.content.startswith('$ignore'):
         if message.author.id == 193112730943750144:
             text = message.content
@@ -366,22 +353,6 @@ HOST TIME OUT
                 await message.channel.send(text)
                 iterateor = iterateor+1
     
-    if message.content.startswith('$revert-chatbot'):
-        if message.author.id == 193112730943750144:
-            #target = client.get_channel(658251987959152641)
-            text = message.content
-            text = text.replace("$revert-chatbot ", "", 1)
-            await message.channel.send("Reverting chatbot to state on: "+text)
-    if message.content.startswith('$chatbotplugin'):
-        if message.author.id == 193112730943750144:
-            #target = client.get_channel(658251987959152641)
-            text = message.content
-            text = text.replace("$chatbotplugin ", "", 1)
-            await message.delete()
-            if text == "disable":
-                await message.channel.send("CHATBOT PLUGIN DISABLED", delete_after=10)
-            elif text == "enable":
-                await message.channel.send("Chatbot Plugin v1.2.5 Enabled.", delete_after=10)
     if message.content.startswith('$cmd'):
         if message.author.id == 193112730943750144:
             #target = client.get_channel(658251987959152641)
@@ -1004,7 +975,7 @@ $schedule events - Displays next 5 events
                 except asyncio.TimeoutError:
                     await message.channel.send("No Database update notification sent. - User timeout",delete_after=5)
                     return
-                if "n" in message.content.lower():
+                if "n" in msg.content.lower():
                     await clicker.delete()
                     await message.channel.send("No Database update notification sent.",delete_after=5)
                     return
