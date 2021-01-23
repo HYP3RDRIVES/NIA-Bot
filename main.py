@@ -120,7 +120,7 @@ async def on_message(message):
                 title="NIA Bot#1656",
                 description="""A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-Currently running **NIABot v1.0.3**
+Currently running **NIABot v1.0.4**
 
 Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)                
                 
@@ -826,17 +826,12 @@ $schedule events - Displays next 5 events
                 description="""
 A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-    Currently running **NIA-Bot v1.0.3**
+    Currently running **NIA-Bot v1.0.4**
                 
     **A new update has been issued!**
 
     *What's New:*
-        - Point Logging
-        - Scheduling
-        - Light chat filter
-        - Mute and Tempmute commands
-        - Purge command
-        - Help Command
+        - Batch Point Logging
 
     You can now use `$help` for help information!!!
 
