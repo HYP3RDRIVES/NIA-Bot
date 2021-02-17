@@ -126,7 +126,10 @@ def userIgnore():
             db.session.commit()
             return "200", 200 
 
-
+@app.route("/latency")
+def ping():
+    now = datetime.utcnow()
+    return str(now)
 @app.route("/user/setpoints", methods=['POST'])
 def apiPointsSet():
     req_data = request.get_json()

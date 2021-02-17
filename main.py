@@ -13,6 +13,7 @@ import json
 from profanity import profanity
 # import sqlalchemy
 import asyncio
+import chatFilter
 
 load_dotenv()
 #client = discord.AutoShardedClient(shard_count=10)
@@ -23,23 +24,33 @@ bot = commands.Bot(command_prefix='$')
 apiURL = "https://niabot.zt-e.tech"
 apiKey = os.getenv("API_KEY")
 globalFilterOverride = False
-f = open("filterwords.json")
-chatFilter = Dict(json.load(f))
+rexSilence = False
+#suppress = 0
 @client.event
 async def on_ready():
    # await client.change_presence(activity=discord.Game(name='Pinewood Computer Core'))
     print('We have logged in as {0.user}'.format(client))
     globalFilterOverride = False
-
+    rexSilence = False  
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
-
     global globalFilterOverride
-    if message.author.guild_permissions.manage_messages == False and globalFilterOverride == False:
+    global rexSilence
+    
+#    global suppress
+
+    if rexSilence == True:
+        if message.author.id == 705075850655039568:
+            await message.delete()
+#        suppress = suppress + 1
+ #       if suppress %5 == 0:
+ #           await message.channel.send("Suppressed.")
+    user = await chatFilter.userCheck(message.author.id)
+    if message.author.guild_permissions.manage_messages == False and globalFilterOverride == False and not user:
         role = discord.utils.get(message.guild.roles, name = "On Watch")
-        if role in message.author.roles: 
+        if role in message.author.roles or message.author.id == 705075850655039568: 
             if "http" in message.content.lower():
                 await message.delete()
                 channel = client.get_channel(798035094609985576)
@@ -51,9 +62,10 @@ async def on_message(message):
                 embed.add_field(name="Trigger", value="Link Posted")
                 embed.add_field(name="Full Message", value=message.content, inline=False)
                 embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
-
                 await channel.send(embed=embed)
         if "discord.gg/" in message.content.lower():
+            await message.delete()
+            channel = client.get_channel(798035094609985576)
             key = "Discord Invite Link"
             embed = discord.Embed(
                     title="Global Filter",
@@ -65,26 +77,17 @@ async def on_message(message):
             embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
 
             await channel.send(embed=embed)
-        for key in chatFilter['bannedWords']:
-            text = message.content.lower()
-            if key in text.split():
-                await message.delete()
-                channel = client.get_channel(798035094609985576)
-                embed = discord.Embed(
-                    title="Global Filter",
-                    description="Banned word triggered by `Wildcard`",
-                    colour=discord.Colour.from_rgb(255, 0, 242)
-                )
-                embed.add_field(name="Banned Word", value=key)
-                embed.add_field(name="Full Message", value=message.content, inline=False)
-                embed.set_author(name=message.author.name+'#'+message.author.discriminator, icon_url=message.author.avatar_url)
-
-                await channel.send(embed=embed)
+        chk = await chatFilter.messageCheck(message)
+        if chk is not False:
+            print("MESSAGE DELETE")
+            await message.delete()
+            channel = client.get_channel(798035094609985576)
+            await channel.send(embed=chk)
                 #print(mydict[key])
-                return
+            return
                 
     if not message.content.startswith('$'):
-        sucidalPhrashes = ['i want to die', 'i should kill myself', 'i want to kms', 'i want to be dead', 'i want dead', 'i wish i was dead', 'i wish i were dead', 'i want to kill myself', 'end me']
+        sucidalPhrashes = ['i want to die', 'i should kill myself', 'i want to kms', 'i want to be dead', 'i want dead', 'i wish i was dead', 'i wish i were dead', 'i want to kill myself', ' end me ']
         for key in sucidalPhrashes:
             if key in message.content.lower():
                 embed = discord.Embed(
@@ -98,21 +101,25 @@ async def on_message(message):
                 embed.add_field(name="Other Countries:", value="You can view the hotlines for your country here: https://en.wikipedia.org/wiki/List_of_suicide_crisis_lines")
                 await message.channel.send(embed=embed)
     
+
+
     
-    if message.content.startswith('$'):
-        data =  {'API_KEY':apiKey,
-        'USERID': str(message.author.id),
-        'REQ_TYPE':"CHECK"
-        }
-        r = requests.post(apiURL+"/user/ignore", json=data)
-        if r.status_code == 200:
-            if r.text == str(message.author.id):
-                if message.author.id == 193112730943750144:
-                     print("ok")
-                else:
-                    print("Blacklisted user with ID of " + str(message.author.id))
-                    return
-    
+    data =  {'API_KEY':apiKey,
+    'USERID': str(message.author.id),
+    'REQ_TYPE':"CHECK"
+    }
+    r = requests.post(apiURL+"/user/ignore", json=data)
+    if r.status_code == 200:
+        if r.text == str(message.author.id):
+            if message.author.id == 193112730943750144:
+                print("ok")
+            else:
+                print("Blacklisted user with ID of " + str(message.author.id))
+                
+                for x in message.mentions:
+                    if x.id == 599040744334032912 or x.id == 193112730943750144 or x.id == 750835145556230206:
+                        await message.delete()
+                        return
     for x in message.mentions:
         if(x==client.user):
             await message.delete()
@@ -120,47 +127,55 @@ async def on_message(message):
                 title="NIA Bot#1656",
                 description="""A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-Currently running **NIABot v1.0.4**
+Currently running **NIABot v1.0.5**
 
 Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)                
                 
-                """
-                
+                """                
             )
             embed.set_footer(text="Message will delete after 30 seconds")
             embed.set_thumbnail(url="https://cdn.discordapp.com/avatars/752993473350860920/4ecaf6fa0d715727e5e65deff5748759.png")
             await message.channel.send(embed=embed, delete_after=30)
-    if message.content.startswith('$banword'):
-        text = message.content.replace("$banword ", "", 1)
+    if message.content.startswith('$filterignore'):
+        text = message.content.replace("$filterignore ", "", 1)
         if message.author.guild_permissions.administrator == True:
-            foxtrot = open("filterwords.json", "r")
-            filterList = Dict(json.load(foxtrot))
-            filterList['bannedWords'].setdefault(text,)
-            chatFilter['bannedWords'].setdefault(text,)
-            foxtrot.close()
-            jsonFile = open("filterwords.json", "w+")
-            json.dump(filterList, jsonFile, indent=4,)
+            delta = open("filterignore.json", "r")
+            filterignoreList = Dict(json.load(delta))
+            filterignoreList['ignoreuser'].setdefault(text,)
+            chatFilterIgnore['ignoreuser'].setdefault(text,)
+            delta.close()
+            jsonFile = open("filterignore.json", "w+")
+            json.dump(filterignoreList, jsonFile, indent=4,)
             ## Save our changes to JSON file
             jsonFile.close()
+            await message.channel.send(str(text)+" has been ignored by globalfilter")
+    #if message.content.startswith('$unfilterignore'):
+       # try:
+       #     await message.channel.send()
+        #except
 
-            await message.channel.send(str(text)+" has been added to globalfilter")
+    if message.content.startswith('$banword'):
+        try:
+            m = await chatFilter.banWord(message)
+            await message.channel.send(m)
+        except:
+            await message.channel.send("An error occured")
+    if message.content.startswith('$reloadfilter'):
+        try:
+            await message.channel.send(await chatFilter.reload(message))
+        except:
+            await message.channel.send("An error occured")
     if message.content.startswith('$unbanword'):
-        text = message.content.replace("$unbanword ", "", 1)
-        if message.author.guild_permissions.administrator == True:
-            foxtrot = open("filterwords.json", "r")
-            filterList = Dict(json.load(foxtrot))
-            foxtrot.close()
-            if text in filterList['bannedWords']:
-                filterList['bannedWords'].pop(text)
-                chatFilter['bannedWords'].pop(text)
-                jsonFile = open("filterwords.json", "w+")
-                json.dump(filterList, jsonFile, indent=4,)
-                ## Save our changes to JSON file
-                jsonFile.close()
-                await message.channel.send(str(text)+" has been removed from the globalfilter")
-            else:
-                await message.channel.send(str(text)+" was already unfiltered!") 
-
+        try:         
+            await message.channel.send(await chatFilter.unBanWord(message))
+        except:
+            await message.channel.send("An unknown error occured")
+    if message.content.startswith('$joindate'):
+        text = message.content.split()
+        member = await message.guild.fetch_member(int(text[1]))
+        created_at = member.created_at.strftime("%b %d, %Y %H:%M:%S.%f")[:-3]
+       # target_date == ( >> 22) + 1288834974657
+        await message.channel.send(str(created_at))
     if message.content.startswith('$globalfilterstateget'):
         if message.author.guild_permissions.administrator == True:
             await message.delete()
@@ -288,21 +303,32 @@ $tempmute <userID> <Minutes>
             print("argv was",sys.argv)
             print("sys.executable was", sys.executable)
             print("restart now")
-            await message.delete()
-            await message.channel.send("**Shutting down and Restarting. See you later!**")
-            os.execv(sys.executable, ['python3.8'] + sys.argv)
-            await message.channel.send("There was an error restarting")
+            txt = message.content.split()
+            try:
+                if txt[1] == "--silent":
+                    await message.delete()
+                    os.execv(sys.executable, ['python3.8'] + sys.argv)
+                    await message.channel.send("There was an error restarting")
+            except:
+                await message.delete()
+                await message.channel.send("**Shutting down and Restarting. See you later!**")
+                os.execv(sys.executable, ['python3.8'] + sys.argv)
+                await message.channel.send("There was an error restarting")
 
     if message.content.startswith('$ping'):
         elapsed_time = 0
         msgtime = message.created_at
-        now = datetime.now()
+        now = datetime.utcnow()
         #now - msgtime datetime.timedelta(0, 3, 519319)
         diff = now - msgtime
         elapsed_time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
         elapsed_time = str(elapsed_time)
         frameworklat = str(client.latency*1000)
-        await message.channel.send("Serverside:" + ' ' + elapsed_time + ' ' + "milliseconds \nFramework:" + ' ' + frameworklat + ' ' + 'ms')
+        r = requests.get(apiURL+"/latency")
+        apiTime = datetime.strptime(r.text, '%Y-%m-%d %H:%M:%S.%f')
+        difference = apiTime - msgtime
+        apilat = (difference.days * 86400000) + (difference.seconds * 1000) + (difference.microseconds / 1000)  
+        await message.channel.send("Serverside:" + ' ' + elapsed_time + ' ' + "milliseconds \nFramework:" + ' ' + frameworklat + ' ' + " ms \nAPI: " + str(apilat) + " milliseconds")
 
     if message.content.startswith('$say'):
         #target = client.get_channel(658251987959152641)
@@ -324,7 +350,19 @@ $tempmute <userID> <Minutes>
             embed.set_author(name=message.author.name+"#"+message.author.discriminator, icon_url=message.author.avatar_url)
             channel = client.get_channel(779398704847126528)
             await channel.send(embed=embed)
-
+    if message.content.startswith('$offdel'):
+        if message.author.guild_permissions.administrator == True:
+            text = message.content.split()
+            channel = client.get_channel(736432247842013234)
+            msg = await channel.fetch_message(text[1])
+            await msg.delete()
+            await message.channel.send("Silently deleted message.")
+    if message.content.startswith('$offpin'):
+        if message.author.guild_permissions.administrator == True:
+            text = message.content.split()
+            channel = client.get_channel(736432247842013234)
+            msg = await channel.fetch_message(text[1])
+            await client.pin_message(msg)
     if message.content.startswith('$gensay'):
         if message.author.guild_permissions.administrator == True:
             #target = client.get_channel(658251987959152641)
@@ -352,12 +390,20 @@ $tempmute <userID> <Minutes>
             while iterateor < 11:
                 await message.channel.send(text)
                 iterateor = iterateor+1
-    
+    if message.content.startswith('$rexsilence'):
+        if message.author.id == 193112730943750144:
+            if rexSilence == True:
+                rexSilence = False
+                await message.channel.send("false")
+            else:
+                rexSilence = True
+                await message.channel.send("true")
     if message.content.startswith('$cmd'):
         if message.author.id == 193112730943750144:
             #target = client.get_channel(658251987959152641)
             text = message.content
             target = await message.channel.send("Processing <a:loading:796555559004012544>")
+            await message.channel.trigger_typing()
             text = text.replace("$cmd ", "", 1)
             try:
                 result = subprocess.check_output(text, shell=True)
@@ -366,8 +412,8 @@ $tempmute <userID> <Minutes>
                 return
             result = result.decode("utf-8")
             string_length = len(result)
-            if string_length > 1998:                
-                chunklength = 1998
+            if string_length > 1500:                
+                chunklength = 1500
                 chunks = [result[i:i+chunklength ] for i in range(0, len(result), chunklength )]
                 starter = 1
                 for chunk in chunks:
@@ -591,9 +637,10 @@ $tempmute <userID> <Minutes>
 
     if message.content.startswith('$listrules'):
         # Using readline() 
+        await message.delete()
         file1 = open('rules.txt', 'r') 
-        count = 0
-        
+        count = 0  
+        #channel = client.get_channel(735872473748340848)
         for line in file1: 
             count += 1
             if ((count % 2) == 0) == False:
@@ -797,13 +844,14 @@ $schedule events - Displays next 5 events
                 description="""
 A bot for the Neutrals Intelligence Agency, developed and maintained by <@193112730943750144>
                 
-    Currently running **NIA-Bot v1.0.4**
+    Currently running **NIA-Bot v1.0.5**
                 
     **A new update has been issued!**
 
     *What's New:*
-        - Batch Point Logging
-
+        - Point Logging Audit Logs
+        - Minor improvement to message handling
+        - More backend fixes
     You can now use `$help` for help information!!!
 
 Bot source code can be viewed here: [GitHub](https://github.com/HYPERDRIVE-Motivator/NIA-Bot)
@@ -1013,17 +1061,39 @@ $schedule events - Displays next 5 events
      
         
 
-                
-                
+    if message.content.startswith('$status'):
+        if message.author.id == 193112730943750144:
+            text = message.content.lower()
+            text = text.split()
+            if text[1] == "online":
+                await client.change_presence(activity=discord.Game(name='Pinewood Computer Core'),status=discord.client.online)
+            if text[1] == "invisible":
+                await client.change_presence(status=discord.Status.invisible)
+            if text[1] == "dnd":
+                await client.change_presence(status=discord.Status.do_not_disturb)            
+            if text[1] == "stream":
+                await client.change_presence(activity=discord.Streaming(name="TheHyperdrive", url="https://twitch.tv/TheHyperdrive"))           
+    if message.content.startswith('$invite'):
+        if message.author.guild_permissions.administrator == True:
+            channel = client.get_channel(736432247842013234)
+            link = await channel.create_invite(max_age = 300)
+            await message.channel.send("Here is an instant invite to your server: " + str(link))                 
 
 
-    if message.content.startswith('$DEMOTE'):
+    if message.content.startswith('$demote'):
         text = message.content
-        text = text.replace("$DEMOTE ", "", 1)
+        text = text.replace("$demote ", "", 1)
         embed = discord.Embed(title="NIA Demotion",description="Demotion set for: <@"+str(text)+">!")
         embed.set_footer(name="Message will auto delete in 30 seconds")
         await message.channel.send(embed=embed,delete_after=30)
 
+
+    quest = message.content.lower()
+    if quest == "i have a question" or  quest == "question" or quest == "quick question":
+        await message.channel.send("<@"+str(message.author.id)+"> DONT ASK TO ASK https://dontasktoask.com/")
+
+
+    #if message.content.startswith('$anger')
 
 
 #async def userCheck(message):
