@@ -104,6 +104,7 @@ async def on_message(message):
 
 
     
+    
     data =  {'API_KEY':apiKey,
     'USERID': str(message.author.id),
     'REQ_TYPE':"CHECK"

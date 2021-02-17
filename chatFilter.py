@@ -13,6 +13,7 @@ async def userCheck(id):
     else:
         return True
  
+ 
            
 async def messageCheck(message):
     for key in chatFilter['bannedWords']:
