@@ -15,7 +15,7 @@ from profanity import profanity
 import asyncio
 import chatFilter
 
-load_dotenv()
+load_dotenv() 
 #client = discord.AutoShardedClient(shard_count=10)
 intents = discord.Intents.default()
 intents.members = True

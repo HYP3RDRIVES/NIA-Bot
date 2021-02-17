@@ -7,7 +7,8 @@ from addict import Dict
 import json
 from datetime import datetime
 app = Flask(__name__)
-
+ 
+ 
 #app.config['SECRET_KEY'] = 'QuyylPshMfZdediqCAboDfCyPr1BfZ1z'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SECRET_KEY'] = os.environ.get("API_KEY")
